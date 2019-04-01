@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
-import { cleanup, render, act, testHook } from 'react-testing-library';
+import { render } from 'react-testing-library';
+import { cleanup, renderHook, act } from 'react-hooks-testing-library';
 import nock from 'nock';
 
 import { CoolerArticleResource, UserResource } from '../../__tests__/common';
@@ -24,7 +25,9 @@ class MockNetworkManager extends NetworkManager {
   }
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+});
 
 describe('<RestProvider />', () => {
   const payload = {
@@ -74,13 +77,18 @@ describe('<RestProvider />', () => {
   let manager: NetworkManager;
   function testProvider(callback: () => void, fbmock: jest.Mock<any, any>) {
     function Fallback() {
+      console.log('falling back')
       fbmock();
       return null;
     }
-    return testHook(callback, {
+    function whatever() {
+      console.log('wrapper');
+      return ''
+    }
+    return renderHook(callback, {
       wrapper: ({ children }) => (
         <RestProvider manager={manager}>
-          <Suspense fallback={<Fallback />}>{children}</Suspense>
+          <Suspense fallback={<Fallback />}>{whatever()}{children}</Suspense>
         </RestProvider>
       ),
     });
@@ -149,11 +157,17 @@ describe('<RestProvider />', () => {
     const url = CoolerArticleResource.url(payload);
     const fbmock = jest.fn();
     let article: any;
-    testProvider(() => {
+    const { result, waitForNextUpdate } = testProvider(() => {
       article = useResource(CoolerArticleResource.singleRequest(), payload);
+      return article;
     }, fbmock);
-    expect(fbmock).toBeCalled();
-    await (manager as any).fetched[url];
+    console.log('before')
+    console.log('result', result.error);
+    expect(result.error instanceof Promise).toBe(true)
+    await result.error;
+    //expect(fbmock).toBeCalled();
+    //await (manager as any).fetched[url];
+    console.log('result', result.current)
     expect(article instanceof CoolerArticleResource).toBe(true);
     expect(article.title).toBe(payload.title);
   });

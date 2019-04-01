@@ -1,6 +1,6 @@
 import sinon from 'sinon';
 import createEnhancedReducerHook from '../middleware';
-import { testHook, act, cleanup } from 'react-testing-library';
+import { cleanup, renderHook, act } from 'react-hooks-testing-library';
 
 afterEach(cleanup);
 
@@ -30,7 +30,7 @@ describe('createEnhancedReducerHook', () => {
 
   test('runs through a single middleware', () => {
     let state, dispatch: Function;
-    testHook(() => {
+    renderHook(() => {
       const useEnhancedReducer = createEnhancedReducerHook(logger);
       [state, dispatch] = useEnhancedReducer(state => state, {});
     });
@@ -50,11 +50,11 @@ describe('createEnhancedReducerHook', () => {
 
   test('reducer to work properly', () => {
     let state, dispatch: Function;
-    testHook(() => {
+    renderHook(() => {
       const useEnhancedReducer = createEnhancedReducerHook(logger);
       [state, dispatch] = useEnhancedReducer(
         (state, action) => ({ ...state, omlet: action.payload }),
-        { eggs: 'bacon' },
+        { eggs: 'bacon' }
       );
     });
     act(() => {
@@ -75,10 +75,10 @@ describe('createEnhancedReducerHook', () => {
 
   test('should work with middlewares that call dispatch', () => {
     let state, dispatch: Function;
-    testHook(() => {
+    renderHook(() => {
       const useEnhancedReducer = createEnhancedReducerHook(
         logger,
-        dispatchingMiddleware,
+        dispatchingMiddleware
       );
       [state, dispatch] = useEnhancedReducer(state => state, {});
     });
